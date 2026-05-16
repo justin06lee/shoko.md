@@ -78,12 +78,11 @@ def near_file(path: str, cfg: Dict[str, Any], sample_size: int) -> Dict[str, Any
             return {"file": path, "record_count": total, "severity": "WARNING", "finding": f"Near-duplicate check unavailable: {exc2}", "dependency_error": str(exc), "clusters": [], "cluster_count": 0, "method": "unavailable"}
     cluster_summaries = []
     clustered_records = set()
-    for group in sorted(clusters, key=len, reverse=True)[:sample_size]:
-        clustered_records.update(group)
-        members = [{"loc": records[i][0], "input_excerpt": redact_text(records[i][1][:300])} for i in group[:sample_size]]
-        cluster_summaries.append({"size": len(group), "members": members})
     for group in clusters:
         clustered_records.update(group)
+    for group in sorted(clusters, key=len, reverse=True)[:sample_size]:
+        members = [{"loc": records[i][0], "input_excerpt": redact_text(records[i][1][:300])} for i in group[:sample_size]]
+        cluster_summaries.append({"size": len(group), "members": members})
     severity = "WARNING" if clusters else "OK"
     finding = f"{len(clusters)} near-duplicate cluster(s) at threshold {threshold}" if clusters else "No near-duplicate prompt/input clusters found"
     return {"file": path, "record_count": total, "severity": severity, "finding": finding, "threshold": threshold, "method": method, "cluster_count": len(clusters), "records_in_clusters": len(clustered_records), "clusters": cluster_summaries}

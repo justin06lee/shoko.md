@@ -12,6 +12,10 @@ def collect_splits(paths: List[str], cfg: Dict[str, Any]) -> Dict[str, List[Tupl
     for path in paths:
         for wrapped in iter_records(path, allow_json_errors=True):
             rec = wrapped.record
+            if is_synthetic_record(rec):
+                # Blank/unparseable rows hash alike; including them would report
+                # spurious cross-split leakage. validate_schema flags them instead.
+                continue
             split = None
             if isinstance(rec, dict) and rec.get("split") is not None:
                 split = str(rec.get("split")).strip().lower()

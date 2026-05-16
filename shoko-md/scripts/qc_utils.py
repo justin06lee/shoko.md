@@ -5,10 +5,8 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
-import io
 import json
 import math
-import os
 import random
 import re
 import statistics
@@ -77,12 +75,24 @@ def now_iso() -> str:
 
 def load_config(path: Optional[str]) -> Dict[str, Any]:
     cfg = dict(DEFAULT_CONFIG)
-    if not path:
+    if path:
+        p = Path(path)
+        if not p.exists():
+            raise FileNotFoundError(f"Config file not found: {path}")
+        text = p.read_text(encoding="utf-8")
+    else:
+        # Auto-discover: global then local .shoko.config.json
+        global_cfg = Path.home() / ".shoko.config.json"
+        local_cfg = Path.cwd() / ".shoko.config.json"
+        loaded = {}
+        if global_cfg.exists():
+            loaded.update(json.loads(global_cfg.read_text(encoding="utf-8") or "{}"))
+        if local_cfg.exists():
+            loaded.update(json.loads(local_cfg.read_text(encoding="utf-8") or "{}"))
+        if not loaded:
+            return cfg
+        cfg.update(loaded)
         return cfg
-    p = Path(path)
-    if not p.exists():
-        raise FileNotFoundError(f"Config file not found: {path}")
-    text = p.read_text(encoding="utf-8")
     if p.suffix.lower() in {".yaml", ".yml"}:
         try:
             import yaml  # type: ignore
@@ -206,6 +216,13 @@ def iter_records(path: str, *, allow_json_errors: bool = False) -> Iterator[Reco
                         idx += 1
     else:
         raise ValueError(f"Unsupported extension {suffix}: {path}")
+
+
+def is_synthetic_record(record: Any) -> bool:
+    """True for placeholder records iter_records yields for blank lines or JSON
+    parse failures. These are surfaced by schema validation; hashing or
+    comparing them elsewhere would invent false duplicates and false leakage."""
+    return isinstance(record, dict) and ("__empty_line__" in record or "__json_error__" in record)
 
 
 def canonical_json(value: Any) -> str:

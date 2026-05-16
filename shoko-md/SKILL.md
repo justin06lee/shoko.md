@@ -10,7 +10,7 @@ metadata:
 
 Run deterministic quality control on fine-tuning datasets for SFT, instruction tuning, chat data, prompt-completion data, DPO/RLHF preference pairs, and classification fine-tunes. The skill is a checklist plus toolbox: scripts compute scale-dependent facts exactly where possible, and Claude interprets severity and remediation priorities.
 
-Use scripts rather than eyeballing. Never estimate counts manually when a script can compute them.
+Lean on the scripts rather than eyeballing the data. Counts, duplicate rates, and leakage are easy to misjudge by hand, and a wrong number in a QC report is worse than no number — so let the scripts compute the facts and spend your effort interpreting them.
 
 ## Scope
 
@@ -68,10 +68,12 @@ The runner writes per-check JSON, stderr logs, `manual_review_samples.json`, and
 For declared classification labels or custom thresholds:
 
 ```bash
-python scripts/run_all.py data/ --config qc-config.json --output-dir qc-results
+python scripts/run_all.py data/ --config .shoko.config.json --output-dir qc-results
 ```
 
-Example config:
+Config files use `.shoko.config.json` (auto-discovered from the current directory or `~/.shoko.config.json`, or passed explicitly via `--config`).
+
+Example:
 
 ```json
 {
@@ -87,7 +89,7 @@ Example config:
 Every script in `scripts/` is standalone:
 
 ```bash
-python scripts/<name>.py <input> --config config.json --sample-size 5
+python scripts/<name>.py <input> --config .shoko.config.json --sample-size 5
 ```
 
 Each script emits machine-readable JSON to stdout and a human-readable summary to stderr. Scripts exit nonzero on CRITICAL issues so they can be chained, but `run_all.py` continues after nonzero exits to produce a complete report.

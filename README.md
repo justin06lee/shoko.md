@@ -17,8 +17,10 @@
 
 ## Quick start
 
+The fastest way to use shoko.md is as a Claude Code skill:
+
 ```bash
-# Install the skill
+# Install with bmo
 bmo add ./shoko.md.skill
 
 # Or install directly from GitHub
@@ -27,16 +29,64 @@ bmo add github:justin06lee/shoko.md
 
 Then in Claude Code:
 
-> "QC this chat dataset before I train on it"  
-> "Audit this DPO preference file for bugs"  
+> "QC this chat dataset before I train on it"
+> "Audit this DPO preference file for bugs"
 > "Validate this classification CSV"
 
-Or run a single script directly:
+The skill handles dataset loading, format detection, and running the right checks automatically.
+
+---
+
+## Skill
+
+This project is packaged as a [Claude Code skill](https://docs.claude.com/en/docs/claude-code/skills). See `shoko.md.skill` for the distributed package or `shoko-md/` for the source.
+
+### Eval results
+
+The skill was benchmarked across 3 eval cases (chat QC, DPO audit, classification validation):
+
+| Metric | With skill | Without skill | Delta |
+|---|---|---|---|
+| Pass rate | 89% | 22% | **+67%** |
+| Time | 8.5s | 33.3s | **-24.8s** |
+| Tokens | 12.5K | 20.7K | **-8.2K** |
+
+---
+
+## Manual install
+
+If you prefer to install the skill without bmo:
 
 ```bash
+# The .skill package is a zip archive — extract it into the skills directory
+# so that ~/.claude/skills/shoko-md/SKILL.md exists.
+unzip shoko.md.skill -d ~/.claude/skills/
+```
+
+Then use the same Claude Code prompts as above.
+
+---
+
+## Running scripts directly
+
+You can also run the QC scripts standalone (no Claude Code needed):
+
+```bash
+# Run every check on a dataset directory
 python shoko-md/scripts/run_all.py /path/to/dataset --output-dir qc-results
+
+# With example data (has planted issues)
+python shoko-md/scripts/run_all.py shoko-md/examples --output-dir qc-results --sample-size 5
+```
+
+Output: per-check JSON, stderr logs, `manual_review_samples.json`, and a consolidated `report.md`.
+
+Or run individual scripts:
+
+```bash
 python shoko-md/scripts/split_leakage.py /path/to/dataset
 python shoko-md/scripts/pii_scan.py /path/to/dataset
+python shoko-md/scripts/dedup_exact.py /path/to/dataset
 ```
 
 ---
@@ -52,10 +102,10 @@ python shoko-md/scripts/pii_scan.py /path/to/dataset
 | `length_stats.py` | Character/token length outliers | WARNING–OK |
 | `pii_scan.py` | Emails, phone numbers, SSNs, credit cards, API keys, addresses | WARNING–OK |
 | `split_leakage.py` | Cross-split exact and near-duplicate leakage | CRITICAL–OK |
-| `chat_format_check.py` | Role alternation, empty assistant turns, tool call types | CRITICAL–WARNING |
-| `preference_pair_check.py` | Chosen=rejected, conflicting prompt pairs | CRITICAL–WARNING |
+| `chat_format_check.py` | Role alternation, empty assistant turns, tool call types | CRITICAL–OK |
+| `preference_pair_check.py` | Chosen=rejected, conflicting prompt pairs | CRITICAL–OK |
 | `classification_check.py` | Label normalization drift, class balance | WARNING–OK |
-| `prompt_completion_check.py` | Empty completions, prompt copying | CRITICAL–WARNING |
+| `prompt_completion_check.py` | Empty completions, prompt copying | CRITICAL–OK |
 
 ---
 
@@ -78,10 +128,10 @@ Auto-detected shapes: OpenAI chat, Anthropic-style chat, prompt-completion pairs
 
 ## Configuration
 
-Pass config when running checks in Claude Code, or directly:
+Config is auto-discovered from `.shoko.config.json` in the current directory or `~/.shoko.config.json` (local overrides global). You can also pass it explicitly:
 
 ```bash
-python shoko-md/scripts/run_all.py data/ --config config.json --output-dir qc-results
+python shoko-md/scripts/run_all.py data/ --config .shoko.config.json --output-dir qc-results
 ```
 
 ```json
@@ -92,22 +142,6 @@ python shoko-md/scripts/run_all.py data/ --config config.json --output-dir qc-re
   "max_file_size_gb": 1.0
 }
 ```
-
----
-
-## Skill
-
-This project is packaged as a Claude Code skill. See `shoko.md.skill` for the distributed package or `shoko-md/` for the source.
-
-### Eval results
-
-The skill was benchmarked across 3 eval cases (chat QC, DPO audit, classification validation):
-
-| Metric | With skill | Without skill | Delta |
-|---|---|---|---|
-| Pass rate | 89% | 22% | **+67%** |
-| Time | 8.5s | 33.3s | **-24.8s** |
-| Tokens | 12.5K | 20.7K | **-8.2K** |
 
 ---
 

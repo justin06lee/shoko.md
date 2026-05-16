@@ -10,6 +10,10 @@ def dedup_file(path: str, cfg: Dict[str, Any], sample_size: int) -> Dict[str, An
     try:
         for wrapped in iter_records(path, allow_json_errors=True):
             total += 1
+            if is_synthetic_record(wrapped.record):
+                # Blank lines and unparseable rows are reported by validate_schema;
+                # they all hash alike, so counting them here would be a false dup.
+                continue
             h = record_hash(wrapped.record)
             if h in seen:
                 duplicate_count += 1

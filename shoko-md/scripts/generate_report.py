@@ -14,7 +14,10 @@ def load_results(paths: List[str]) -> List[Dict[str, Any]]:
     for raw in paths:
         p = Path(raw)
         if p.is_dir():
-            files.extend(sorted(x for x in p.glob("*.json") if x.name != "final_report.json"))
+            # Skip orchestration artifacts: they are not check outputs and would
+            # otherwise show up as stray rows when the report is regenerated.
+            skip = {"final_report.json", "run_all_summary.json", "effective_config.json"}
+            files.extend(sorted(x for x in p.glob("*.json") if x.name not in skip))
         else:
             files.append(p)
     return [r for f in files if (r := load_json_file(f)) is not None and isinstance(r, dict) and ("script" in r or "summary" in r)]
