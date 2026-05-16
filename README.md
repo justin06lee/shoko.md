@@ -18,21 +18,25 @@
 ## Quick start
 
 ```bash
-# Run every check on a dataset directory
-python shoko-md/scripts/run_all.py /path/to/dataset --output-dir qc-results
+# Install the skill
+bmo add ./shoko.md.skill
 
-# With example data (has planted issues)
-python shoko-md/scripts/run_all.py shoko-md/examples --output-dir qc-results --sample-size 5
+# Or install directly from GitHub
+bmo add github:justin06lee/shoko.md
 ```
 
-Output: per-check JSON, stderr logs, `manual_review_samples.json`, and a consolidated `report.md`.
+Then in Claude Code:
 
-Or run individual scripts:
+> "QC this chat dataset before I train on it"  
+> "Audit this DPO preference file for bugs"  
+> "Validate this classification CSV"
+
+Or run a single script directly:
 
 ```bash
+python shoko-md/scripts/run_all.py /path/to/dataset --output-dir qc-results
 python shoko-md/scripts/split_leakage.py /path/to/dataset
 python shoko-md/scripts/pii_scan.py /path/to/dataset
-python shoko-md/scripts/dedup_exact.py /path/to/dataset
 ```
 
 ---
@@ -74,6 +78,8 @@ Auto-detected shapes: OpenAI chat, Anthropic-style chat, prompt-completion pairs
 
 ## Configuration
 
+Pass config when running checks in Claude Code, or directly:
+
 ```bash
 python shoko-md/scripts/run_all.py data/ --config config.json --output-dir qc-results
 ```
@@ -91,19 +97,7 @@ python shoko-md/scripts/run_all.py data/ --config config.json --output-dir qc-re
 
 ## Skill
 
-This project is packaged as a [Claude Code skill](https://opencode.ai). The skill identifier is `shoko-md`; see `shoko.md.skill` for the distributed package or `shoko-md/` for the source.
-
-### Using the skill
-
-```bash
-# Install the skill
-bmo add ./shoko.md.skill
-
-# Then in a Claude Code session, prompts like these will trigger the skill:
-# "QC this chat dataset before I train on it"
-# "Audit this DPO preference file for bugs"
-# "Validate this classification CSV"
-```
+This project is packaged as a [Claude Code skill](https://opencode.ai). See `shoko.md.skill` for the distributed package or `shoko-md/` for the source.
 
 ### Eval results
 
