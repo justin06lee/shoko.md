@@ -1,17 +1,17 @@
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="shoko.png">
-    <img alt="shoko.md" src="shoko.png" width="300">
+    <img alt="shoko.md" src="shoko.png" width="360">
   </picture>
+
+  # shoko.md
+
+  Fine-tuning dataset quality control — deterministic checks for SFT, chat, DPO/RLHF preference pairs, classification, and prompt-completion formats.
+
+  Run comprehensive quality control on fine-tuning datasets without relying on LLM-as-judge. Scripts compute exact facts where possible; severity and remediation priorities are interpreted through a rubric.
+
+  **Use cases** — check, validate, audit, QC, review, clean, or sanity-check training data for SFT, instruction tuning, DPO, RLHF, or classification.
 </div>
-
-# shoko.md
-
-Fine-tuning dataset quality control — deterministic checks for SFT, chat, DPO/RLHF preference pairs, classification, and prompt-completion formats.
-
-Run comprehensive quality control on fine-tuning datasets without relying on LLM-as-judge. Scripts compute exact facts where possible; severity and remediation priorities are interpreted through a rubric.
-
-**Use cases** — check, validate, audit, QC, review, clean, or sanity-check training data for SFT, instruction tuning, DPO, RLHF, or classification.
 
 ---
 
