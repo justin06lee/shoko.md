@@ -1,0 +1,2 @@
+{"messages":[{"role":"system","content":"You are a helpful support assistant."},{"role":"user","content":"My email is jane.doe@example.com and my address is 123 Main St. How do I reset my password?"},{"role":"assistant","content":"Use the reset link in account settings."}]}
+{"messages":[{"role":"system","content":"You are a helpful support assistant."},{"role":"user","content":"How do I reset my account password?"},{"role":"assistant","content":"Go to account settings and select password reset."}]}

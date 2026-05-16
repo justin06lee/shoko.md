@@ -1,0 +1,36 @@
+{
+  "skill_name": "shoko-md",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Please QC this fine-tuning chat dataset and tell me if it is safe to train on. Use the files in examples/.",
+      "expected_output": "Runs the full QC workflow, flags leakage, exact duplicates, PII, chat role/empty assistant issues, special tokens, and produces a markdown report.",
+      "files": ["examples/train.chat.jsonl", "examples/val.chat.jsonl"],
+      "expectations": [
+        "The report includes a summary table with severities.",
+        "The report flags exact cross-split leakage as CRITICAL.",
+        "PII examples are redacted."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit this DPO dataset for preference-pair bugs: examples/preference.jsonl",
+      "expected_output": "Runs preference-pair checks and flags chosen==rejected, conflicting prompt pairs, and length bias or manual verification needs.",
+      "files": ["examples/preference.jsonl"],
+      "expectations": [
+        "chosen==rejected is CRITICAL.",
+        "Manual review samples are surfaced without pretending to judge semantic quality."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Validate this classification fine-tune CSV and check labels: examples/classification.csv",
+      "expected_output": "Runs classification checks and flags label normalization and balance issues when present.",
+      "files": ["examples/classification.csv"],
+      "expectations": [
+        "The report includes class counts.",
+        "The report flags label normalization drift."
+      ]
+    }
+  ]
+}

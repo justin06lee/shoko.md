@@ -1,0 +1,7 @@
+{"messages":[{"role":"system","content":"You are a helpful support assistant."},{"role":"user","content":"My email is jane.doe@example.com and my address is 123 Main St. How do I reset my password?"},{"role":"assistant","content":"Use the reset link in account settings."}]}
+{"messages":[{"role":"system","content":"You are a helpful support assistant."},{"role":"user","content":"My email is jane.doe@example.com and my address is 123 Main St. How do I reset my password?"},{"role":"assistant","content":"Use the reset link in account settings."}]}
+{"messages":[{"role":"system","content":"You are a helpful support assistant."},{"role":"user","content":"How can I reset my account password?"},{"role":"assistant","content":"Open account settings and choose password reset."}]}
+{"messages":[{"role":"user","content":"Tell me a joke."},{"role":"assistant","content":"Sure."},{"role":"assistant","content":"Why did the robot cross the road?"}]}
+{"messages":[{"role":"user","content":"Can you help me?"},{"role":"assistant","content":""}]}
+{"messages":[{"role":"user","content":"Why is this token here <|endoftext|>?"},{"role":"assistant","content":"It should probably be removed."}]}
+{"messages":[{"role":"user","content":"Call a weather tool."},{"role":"assistant","content":"","tool_calls":{"name":"weather"}}]}

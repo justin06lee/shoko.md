@@ -1,0 +1,4 @@
+datasketch>=1.6.5,<2
+tiktoken>=0.7.0,<1
+pyarrow>=15.0.0,<23
+tqdm>=4.66.0,<5
