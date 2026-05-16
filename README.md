@@ -136,9 +136,9 @@ This writes per-check JSON, stderr logs, `manual_review_samples.json`, and a con
 You can also run individual checks:
 
 ```bash
-python shoko-md/scripts/split_leakage.py /path/to/dataset
-python shoko-md/scripts/pii_scan.py /path/to/dataset
-python shoko-md/scripts/dedup_exact.py /path/to/dataset
+python shoko-md/scripts/split_leakage.py    /path/to/dataset
+python shoko-md/scripts/pii_scan.py         /path/to/dataset
+python shoko-md/scripts/dedup_exact.py      /path/to/dataset
 ```
 
 All dependencies are optional — see `shoko-md/requirements.txt`. Scripts degrade gracefully when a package is missing (e.g. dedup falls back to pairwise Jaccard without `datasketch`).
