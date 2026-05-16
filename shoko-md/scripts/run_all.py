@@ -5,7 +5,6 @@ import subprocess
 SCRIPT_DIR = Path(__file__).resolve().parent
 UNIVERSAL = [
     "detect_format.py",
-    "split_leakage.py",
     "encoding_check.py",
     "validate_schema.py",
     "dedup_exact.py",
@@ -23,7 +22,10 @@ FORMAT_SCRIPTS = {
 }
 
 
-def run_script(script: str, inputs: List[str], out_dir: Path, cfg_path: Optional[str], sample_size: Optional[int]) -> Tuple[Optional[Dict[str, Any]], int]:
+SPLIT_NAMES = {"train", "val", "dev", "test"}
+
+
+def run_script(script: str, inputs: List[str], out_dir: Path, cfg_path: Optional[str], sample_size: Optional[int], output_stem: Optional[str] = None) -> Tuple[Optional[Dict[str, Any]], int]:
     cmd = [sys.executable, str(SCRIPT_DIR / script)] + inputs
     if cfg_path:
         cmd.extend(["--config", cfg_path])
@@ -31,7 +33,7 @@ def run_script(script: str, inputs: List[str], out_dir: Path, cfg_path: Optional
         cmd.extend(["--sample-size", str(sample_size)])
     eprint(f"Running {script} ...")
     proc = subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stem = Path(script).stem
+    stem = output_stem or Path(script).stem
     (out_dir / f"{stem}.stderr.txt").write_text(proc.stderr, encoding="utf-8")
     try:
         data = json.loads(proc.stdout)
@@ -44,6 +46,46 @@ def run_script(script: str, inputs: List[str], out_dir: Path, cfg_path: Optional
     if proc.returncode not in (0, 2):
         eprint(f"{script} exited {proc.returncode}; continuing so the report can show partial results.")
     return data, proc.returncode
+
+
+def is_split_named(path: str) -> bool:
+    return split_name_from_path(path) in SPLIT_NAMES
+
+
+def file_has_split_field(path: str, sample_limit: int = 2000) -> bool:
+    try:
+        for i, wrapped in enumerate(iter_records(path, allow_json_errors=True)):
+            if i >= sample_limit:
+                break
+            if isinstance(wrapped.record, dict) and wrapped.record.get("split") is not None:
+                return True
+    except Exception:
+        return False
+    return False
+
+
+def split_leakage_jobs(inputs: List[str], detect: Dict[str, Any]) -> List[Tuple[str, List[str]]]:
+    formats_by_file = {
+        f.get("file"): f.get("format")
+        for f in detect.get("files", [])
+        if f.get("format") not in {"mixed", "invalid", "empty", "unknown", "unreadable", "too_large"}
+    }
+    groups: Dict[str, List[str]] = defaultdict(list)
+    for path in inputs:
+        fmt = formats_by_file.get(path)
+        if fmt:
+            groups[fmt].append(path)
+
+    jobs: List[Tuple[str, List[str]]] = []
+    for fmt, files in sorted(groups.items()):
+        split_field_files = [f for f in files if file_has_split_field(f)]
+        if split_field_files:
+            jobs.append((f"split_leakage_{fmt}", split_field_files))
+            continue
+        named = [f for f in files if is_split_named(f)]
+        if len({split_name_from_path(f) for f in named}) >= 2:
+            jobs.append((f"split_leakage_{fmt}", named))
+    return jobs
 
 
 def write_random_review_samples(inputs: List[str], out_dir: Path, cfg: Dict[str, Any]) -> None:
@@ -81,17 +123,27 @@ def main() -> int:
     cfg_path = str(cfg_run_path)
     scripts = list(UNIVERSAL)
     if args.skip_near:
-        scripts = [s for s in scripts if s not in {"dedup_near.py", "split_leakage.py"}]
+        scripts = [s for s in scripts if s != "dedup_near.py"]
     results = []
     max_rc = 0
     for script in scripts:
-        # split_leakage is useful for multiple files or a split field in one file; it is harmless on one file.
         data, rc = run_script(script, inputs, out_dir, cfg_path, args.sample_size)
         results.append(data)
         max_rc = max(max_rc, rc)
     # Decide relevant format-specific checks from detect_format output.
     detected = set()
     detect = next((r for r in results if r.get("script") == "detect_format.py"), {})
+    if args.skip_near:
+        eprint("Skipping split leakage because --skip-near was set.")
+    else:
+        jobs = split_leakage_jobs(inputs, detect)
+        if jobs:
+            for stem, files in jobs:
+                data, rc = run_script("split_leakage.py", files, out_dir, cfg_path, args.sample_size, output_stem=stem)
+                results.append(data)
+                max_rc = max(max_rc, rc)
+        else:
+            eprint("Skipping split_leakage.py because no train/val/test/dev split grouping was detected.")
     for f in detect.get("files", []):
         fmt = f.get("format")
         if fmt in FORMAT_SCRIPTS:

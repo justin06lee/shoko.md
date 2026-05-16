@@ -10,7 +10,7 @@
 
   Run comprehensive quality control on fine-tuning datasets without relying on LLM-as-judge. Scripts compute exact facts where possible; severity and remediation priorities are interpreted through a rubric.
 
-  **Use cases** — check, validate, audit, QC, review, clean, or sanity-check training data for SFT, instruction tuning, DPO, RLHF, or classification.
+  **Use cases** — check, validate, audit, QC, review, vet, or sanity-check training data for SFT, instruction tuning, DPO, RLHF, or classification.
 </div>
 
 ---
@@ -97,7 +97,7 @@ python shoko-md/scripts/run_all.py data/ --config config.json --output-dir qc-re
 
 ## Skill
 
-This project is packaged as a [Claude Code skill](https://opencode.ai). See `shoko.md.skill` for the distributed package or `shoko-md/` for the source.
+This project is packaged as a Claude Code skill. See `shoko.md.skill` for the distributed package or `shoko-md/` for the source.
 
 ### Eval results
 

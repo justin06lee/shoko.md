@@ -20,11 +20,62 @@ def load_results(paths: List[str]) -> List[Dict[str, Any]]:
     return [r for f in files if (r := load_json_file(f)) is not None and isinstance(r, dict) and ("script" in r or "summary" in r)]
 
 
+CHECK_ORDER = [
+    "format_detection",
+    "split_leakage",
+    "schema_validation",
+    "encoding_sanity",
+    "exact_duplicates",
+    "near_duplicates",
+    "length_distribution",
+    "pii_scan",
+    "chat_format",
+    "preference_pairs",
+    "classification",
+    "prompt_completion",
+]
+
+
+def result_sort_key(res: Dict[str, Any]) -> Tuple[int, int, str]:
+    summary = summary_from_result(res)
+    severity = summary["severity"].upper()
+    severity_order = {"CRITICAL": 0, "WARNING": 1, "INFO": 2, "OK": 3}
+    check = summary["check"]
+    base_check = "split_leakage" if check.startswith("split_leakage") else check
+    order = CHECK_ORDER.index(base_check) if base_check in CHECK_ORDER else 999
+    return (severity_order.get(severity, 2), order, check)
+
+
+def issue_rollup(res: Dict[str, Any], severity: str) -> str:
+    counts: Counter[str] = Counter()
+    for f in res.get("files", []) if isinstance(res.get("files"), list) else []:
+        if not isinstance(f, dict):
+            continue
+        for issue in f.get("issues", []) or []:
+            if issue.get("severity") == severity:
+                counts[str(issue.get("code") or issue.get("message") or "issue")] += 1
+    if not counts:
+        return ""
+    parts = [f"{code} ({count})" for code, count in counts.most_common(4)]
+    more = sum(counts.values()) - sum(count for _, count in counts.most_common(4))
+    if more:
+        parts.append(f"{more} more")
+    return "; ".join(parts)
+
+
 def summary_from_result(res: Dict[str, Any]) -> Dict[str, str]:
     summary = res.get("summary") or {}
     check = summary.get("check") or Path(str(res.get("script", "unknown"))).stem
     severity = summary.get("severity", "INFO")
     finding = summary.get("finding", "")
+    rollup = issue_rollup(res, str(severity))
+    if rollup and (
+        not finding
+        or "checks complete" in str(finding).lower()
+        or str(finding).startswith("Validated ")
+        or str(finding) == "Length stats computed"
+    ):
+        finding = rollup
     return {"check": str(check), "severity": str(severity), "finding": str(finding)}
 
 
@@ -174,6 +225,7 @@ def suggested_actions(results: List[Dict[str, Any]]) -> str:
 
 
 def write_report(results: List[Dict[str, Any]], output: Optional[str] = None) -> str:
+    results = sorted(results, key=result_sort_key)
     formats = collect_detected_formats(results)
     counts = collect_record_counts(results)
     all_files = sorted(set(formats) | set(counts))
