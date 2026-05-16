@@ -97,7 +97,7 @@ This project is packaged as a [Claude Code skill](https://opencode.ai). The skil
 
 ```bash
 # Install the skill
-cp shoko.md.skill ~/.claude/skills/
+bmo add ./shoko.md.skill
 
 # Then in a Claude Code session, prompts like these will trigger the skill:
 # "QC this chat dataset before I train on it"
