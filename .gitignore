@@ -7,3 +7,6 @@ venv/
 # QC run artifacts
 qc-results/
 /report.md
+
+# Packaged skill bundle — install via bmo or by copying shoko-md/ instead
+*.skill

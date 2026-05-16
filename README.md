@@ -6,88 +6,66 @@
 
   # shoko.md
 
-  Fine-tuning dataset quality control — deterministic checks for SFT, chat, DPO/RLHF preference pairs, classification, and prompt-completion formats.
+  Deterministic quality control for fine-tuning datasets.
 
-  Run comprehensive quality control on fine-tuning datasets without relying on LLM-as-judge. Scripts compute exact facts where possible; severity and remediation priorities are interpreted through a rubric.
-
-  **Use cases** — check, validate, audit, QC, review, vet, or sanity-check training data for SFT, instruction tuning, DPO, RLHF, or classification.
+  A [Claude Code](https://docs.claude.com/en/docs/claude-code/skills) skill that audits training data for SFT, instruction tuning, chat, DPO/RLHF preference pairs, classification, and prompt-completion formats — no LLM-as-judge, just exact checks and a severity rubric.
 </div>
 
 ---
 
-## Quick start
+## What it does
 
-The fastest way to use shoko.md is as a Claude Code skill:
+Point shoko.md at a dataset and it detects the format, runs the relevant checks, and produces a single markdown report. It catches the structural bugs that quietly ruin a fine-tune: train/test leakage, duplicates, broken chat roles, empty completions, `chosen == rejected`, PII, special-token contamination, and more.
+
+The scripts compute exact facts (counts, duplicate rates, leakage). Claude interprets severity and prioritizes fixes. It **reports only** — it never modifies your data.
+
+---
+
+## Install
+
+### With [bmo](https://github.com/justin06lee/bmo) (recommended)
+
+`bmo` is a tiny installer for Claude Code skills.
 
 ```bash
-# Install with bmo
-bmo add ./shoko.md.skill
+# Preview the skill before installing
+bmo inspect github:justin06lee/shoko.md
 
-# Or install directly from GitHub
+# Install globally (into ~/.claude/skills/)
 bmo add github:justin06lee/shoko.md
+
+# Or install into the current project (./.claude/skills/)
+bmo add --project github:justin06lee/shoko.md
 ```
 
-Then in Claude Code:
+Installing from a local clone works too — point bmo at the skill **directory**:
+
+```bash
+bmo add ./shoko.md/shoko-md
+```
+
+### Without bmo
+
+A Claude Code skill is just a folder containing a `SKILL.md`. Copy the `shoko-md/` directory into your skills directory:
+
+```bash
+git clone https://github.com/justin06lee/shoko.md
+cp -r shoko.md/shoko-md ~/.claude/skills/shoko-md
+```
+
+---
+
+## Usage
+
+Once installed, ask Claude Code to QC a dataset:
 
 > "QC this chat dataset before I train on it"
+>
 > "Audit this DPO preference file for bugs"
+>
 > "Validate this classification CSV"
 
-The skill handles dataset loading, format detection, and running the right checks automatically.
-
----
-
-## Skill
-
-This project is packaged as a [Claude Code skill](https://docs.claude.com/en/docs/claude-code/skills). See `shoko.md.skill` for the distributed package or `shoko-md/` for the source.
-
-### Eval results
-
-The skill was benchmarked across 3 eval cases (chat QC, DPO audit, classification validation):
-
-| Metric | With skill | Without skill | Delta |
-|---|---|---|---|
-| Pass rate | 89% | 22% | **+67%** |
-| Time | 8.5s | 33.3s | **-24.8s** |
-| Tokens | 12.5K | 20.7K | **-8.2K** |
-
----
-
-## Manual install
-
-If you prefer to install the skill without bmo:
-
-```bash
-# The .skill package is a zip archive — extract it into the skills directory
-# so that ~/.claude/skills/shoko-md/SKILL.md exists.
-unzip shoko.md.skill -d ~/.claude/skills/
-```
-
-Then use the same Claude Code prompts as above.
-
----
-
-## Running scripts directly
-
-You can also run the QC scripts standalone (no Claude Code needed):
-
-```bash
-# Run every check on a dataset directory
-python shoko-md/scripts/run_all.py /path/to/dataset --output-dir qc-results
-
-# With example data (has planted issues)
-python shoko-md/scripts/run_all.py shoko-md/examples --output-dir qc-results --sample-size 5
-```
-
-Output: per-check JSON, stderr logs, `manual_review_samples.json`, and a consolidated `report.md`.
-
-Or run individual scripts:
-
-```bash
-python shoko-md/scripts/split_leakage.py /path/to/dataset
-python shoko-md/scripts/pii_scan.py /path/to/dataset
-python shoko-md/scripts/dedup_exact.py /path/to/dataset
-```
+The skill handles dataset loading, format detection, and running the right checks automatically, then hands you a prioritized report.
 
 ---
 
@@ -96,7 +74,7 @@ python shoko-md/scripts/dedup_exact.py /path/to/dataset
 | Check | What it finds | Severity range |
 |---|---|---|
 | `validate_schema.py` | Required fields, types, nulls, valid JSONL, empty/trivial fields | CRITICAL–OK |
-| `encoding_check.py` | Mojibake, BOMs, NULL bytes | WARNING–OK |
+| `encoding_check.py` | Mojibake, BOMs, NULL bytes | CRITICAL–OK |
 | `dedup_exact.py` | Full-record hash duplicates | WARNING–OK |
 | `dedup_near.py` | MinHash LSH near-duplicates | WARNING–OK |
 | `length_stats.py` | Character/token length outliers | WARNING–OK |
@@ -128,11 +106,7 @@ Auto-detected shapes: OpenAI chat, Anthropic-style chat, prompt-completion pairs
 
 ## Configuration
 
-Config is auto-discovered from `.shoko.config.json` in the current directory or `~/.shoko.config.json` (local overrides global). You can also pass it explicitly:
-
-```bash
-python shoko-md/scripts/run_all.py data/ --config .shoko.config.json --output-dir qc-results
-```
+Configuration is optional. shoko.md auto-discovers `.shoko.config.json` in the current directory, falling back to `~/.shoko.config.json` (local overrides global). You can also pass one explicitly with `--config`.
 
 ```json
 {
@@ -145,6 +119,44 @@ python shoko-md/scripts/run_all.py data/ --config .shoko.config.json --output-di
 
 ---
 
+## Running the scripts directly
+
+The QC scripts are standalone Python — no Claude Code required.
+
+```bash
+# Run every check on a dataset directory
+python shoko-md/scripts/run_all.py /path/to/dataset --output-dir qc-results
+
+# Try it on the bundled example data (has planted issues)
+python shoko-md/scripts/run_all.py shoko-md/examples --output-dir qc-results --sample-size 5
+```
+
+This writes per-check JSON, stderr logs, `manual_review_samples.json`, and a consolidated `report.md`.
+
+You can also run individual checks:
+
+```bash
+python shoko-md/scripts/split_leakage.py /path/to/dataset
+python shoko-md/scripts/pii_scan.py /path/to/dataset
+python shoko-md/scripts/dedup_exact.py /path/to/dataset
+```
+
+All dependencies are optional — see `shoko-md/requirements.txt`. Scripts degrade gracefully when a package is missing (e.g. dedup falls back to pairwise Jaccard without `datasketch`).
+
+---
+
+## Eval results
+
+Benchmarked across 3 eval cases (chat QC, DPO audit, classification validation):
+
+| Metric | With skill | Without skill | Delta |
+|---|---|---|---|
+| Pass rate | 89% | 22% | **+67%** |
+| Time | 8.5s | 33.3s | **−24.8s** |
+| Tokens | 12.5K | 20.7K | **−8.2K** |
+
+---
+
 ## Out of scope
 
 - Modifying or cleaning the dataset (report-only)
@@ -154,3 +166,5 @@ python shoko-md/scripts/run_all.py data/ --config .shoko.config.json --output-di
 - Semantic alignment for prompt-completion pairs
 - ML-based PII detection (regex only)
 - Pretraining-scale corpora
+</content>
+</invoke>
