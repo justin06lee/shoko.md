@@ -29,13 +29,13 @@ The scripts compute exact facts (counts, duplicate rates, leakage). Claude inter
 
 ```bash
 # Preview the skill before installing
-bmo inspect github:justin06lee/shoko.md
+bmo inspect justin06lee/shoko.md
 
 # Install globally (into ~/.claude/skills/)
-bmo add github:justin06lee/shoko.md
+bmo add justin06lee/shoko.md
 
 # Or install into the current project (./.claude/skills/)
-bmo add --project github:justin06lee/shoko.md
+bmo add --project justin06lee/shoko.md
 ```
 
 Installing from a local clone works too — point bmo at the skill **directory**:
