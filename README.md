@@ -1,11 +1,11 @@
-# shoko.md
-
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="shoko.png">
-    <img alt="shoko.md" src="shoko.png" width="180">
+    <img alt="shoko.md" src="shoko.png" width="300">
   </picture>
 </div>
+
+# shoko.md
 
 Fine-tuning dataset quality control — deterministic checks for SFT, chat, DPO/RLHF preference pairs, classification, and prompt-completion formats.
 
