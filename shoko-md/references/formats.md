@@ -30,6 +30,7 @@ Supported key pairs:
 {"prompt":"Translate to French: cat","completion":"chat"}
 {"input":"Translate to French: cat","output":"chat"}
 {"instruction":"Translate to French","response":"chat"}
+{"question":"Translate to French: cat","answer":"chat"}
 ```
 
 The skill checks for empty completions and exact prompt copying. Semantic alignment is out of scope.

@@ -1,15 +1,6 @@
 #!/usr/bin/env python3
 from qc_utils import *
 
-REQUIRED_BY_FORMAT = {
-    "openai_chat": ["messages"],
-    "anthropic_chat": [],
-    "prompt_completion": [],
-    "preference_pair": ["chosen", "rejected"],
-    "classification": ["text", "label"],
-    "raw_text": ["text"],
-}
-
 
 def issue(severity: str, code: str, message: str, loc: Dict[str, Any], sample: Any = None) -> Dict[str, Any]:
     out = {"severity": severity, "code": code, "message": message, "loc": loc}
@@ -54,8 +45,8 @@ def validate_record(rec: Any, detected_format: str, wrapped: Record, cfg: Dict[s
             elif not isinstance(rec.get(fld), (str, dict, list)):
                 issues.append(issue("CRITICAL", f"bad_{fld}_type", f"{fld} has unsupported type", wrapped.loc, rec))
     elif fmt == "prompt_completion":
-        if not (("prompt" in keys and "completion" in keys) or ("input" in keys and "output" in keys) or ("instruction" in keys and "response" in keys)):
-            issues.append(issue("CRITICAL", "missing_prompt_completion", "Missing prompt/completion, input/output, or instruction/response pair", wrapped.loc, rec))
+        if not (("prompt" in keys and "completion" in keys) or ("input" in keys and "output" in keys) or ("instruction" in keys and "response" in keys) or ("question" in keys and "answer" in keys)):
+            issues.append(issue("CRITICAL", "missing_prompt_completion", "Missing prompt/completion, input/output, instruction/response, or question/answer pair", wrapped.loc, rec))
     elif fmt == "classification":
         for fld in ["text", "label"]:
             if fld not in rec or rec.get(fld) is None:

@@ -17,6 +17,7 @@ def ascii_hist(values: List[int], bins: int = 10, width: int = 30) -> List[str]:
     lo, hi = min(values), max(values)
     if lo == hi:
         return [f"{lo:>7}-{hi:<7} | {'#' * min(width, len(values))} {len(values)}"]
+    bins = min(bins, max(1, int(hi - lo)))
     step = (hi - lo) / bins
     counts = [0] * bins
     for v in values:

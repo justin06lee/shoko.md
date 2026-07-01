@@ -73,17 +73,20 @@ The skill handles dataset loading, format detection, and running the right check
 
 | Check | What it finds | Severity range |
 |---|---|---|
+| `detect_format.py` | Dataset format per file; mixed-format files | CRITICAL–OK |
 | `validate_schema.py` | Required fields, types, nulls, valid JSONL, empty/trivial fields | CRITICAL–OK |
 | `encoding_check.py` | Mojibake, BOMs, NULL bytes | CRITICAL–OK |
 | `dedup_exact.py` | Full-record hash duplicates | WARNING–OK |
 | `dedup_near.py` | MinHash LSH near-duplicates | WARNING–OK |
 | `length_stats.py` | Character/token length outliers | WARNING–OK |
-| `pii_scan.py` | Emails, phone numbers, SSNs, credit cards, API keys, addresses | WARNING–OK |
+| `pii_scan.py` | Emails, phone numbers, SSNs, credit cards, IP addresses, API keys, addresses | WARNING–OK |
 | `split_leakage.py` | Cross-split exact and near-duplicate leakage | CRITICAL–OK |
 | `chat_format_check.py` | Role alternation, empty assistant turns, tool call types | CRITICAL–OK |
 | `preference_pair_check.py` | Chosen=rejected, conflicting prompt pairs | CRITICAL–OK |
-| `classification_check.py` | Label normalization drift, class balance | WARNING–OK |
+| `classification_check.py` | Labels outside the declared set, label normalization drift, class balance | CRITICAL–OK |
 | `prompt_completion_check.py` | Empty completions, prompt copying | CRITICAL–OK |
+
+Any check also reports CRITICAL if its input file cannot be read.
 
 ---
 
@@ -106,7 +109,7 @@ Auto-detected shapes: OpenAI chat, Anthropic-style chat, prompt-completion pairs
 
 ## Configuration
 
-Configuration is optional. shoko.md auto-discovers `.shoko.config.json` in the current directory, falling back to `~/.shoko.config.json` (local overrides global). You can also pass one explicitly with `--config`.
+Configuration is optional. shoko.md auto-discovers `~/.shoko.config.json` and `.shoko.config.json` in the current directory, merging both over the built-in defaults (local overrides global). You can also pass a JSON or YAML file explicitly with `--config`.
 
 ```json
 {
@@ -116,6 +119,8 @@ Configuration is optional. shoko.md auto-discovers `.shoko.config.json` in the c
   "max_file_size_gb": 1.0
 }
 ```
+
+These are the most common keys; the full set of defaults (near-dup record caps, length windows, tokenizer encoding, sample sizes, warning ratios) lives in `DEFAULT_CONFIG` in `shoko-md/scripts/qc_utils.py`.
 
 ---
 
@@ -131,7 +136,7 @@ python shoko-md/scripts/run_all.py /path/to/dataset --output-dir qc-results
 python shoko-md/scripts/run_all.py shoko-md/examples --output-dir qc-results --sample-size 5
 ```
 
-This writes per-check JSON, stderr logs, `manual_review_samples.json`, and a consolidated `report.md`.
+This writes per-check JSON, stderr logs, `manual_review_samples.json`, `effective_config.json`, `run_all_summary.json`, and a consolidated `report.md`. Pass `--skip-near` to skip the near-duplicate pass on large datasets.
 
 You can also run individual checks:
 
@@ -149,7 +154,7 @@ All dependencies are optional — see `shoko-md/requirements.txt`. Scripts degra
 
 ## Eval results
 
-Benchmarked across 3 eval cases (chat QC, DPO audit, classification validation):
+Benchmarked across 3 eval cases (chat QC, DPO audit, classification validation). Case definitions live in [`shoko-md/evals/evals.json`](shoko-md/evals/evals.json); the numbers below are from a local benchmark run and are not reproducible from this repo alone:
 
 | Metric | With skill | Without skill | Delta |
 |---|---|---|---|

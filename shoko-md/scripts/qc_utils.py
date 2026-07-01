@@ -266,6 +266,11 @@ def extract_messages(record: Any) -> List[Dict[str, Any]]:
         return [m for m in record["messages"] if isinstance(m, dict)]
     if isinstance(record, dict) and isinstance(record.get("conversation"), list):
         return [m for m in record["conversation"] if isinstance(m, dict)]
+    if isinstance(record, dict) and "human" in record and "assistant" in record:
+        return [
+            {"role": "user", "content": record.get("human")},
+            {"role": "assistant", "content": record.get("assistant")},
+        ]
     return []
 
 
@@ -333,17 +338,17 @@ def detect_record_format(record: Any) -> str:
         return "invalid"
     if isinstance(record, dict):
         keys = set(record.keys())
+        if {"human", "assistant"} <= keys and "messages" not in keys and "conversation" not in keys:
+            return "anthropic_chat"
         msgs = extract_messages(record)
         if msgs:
             roles = {message_role(m) for m in msgs}
             if roles and roles <= {"system", "user", "assistant", "tool"}:
                 return "openai_chat"
             return "anthropic_chat"
-        if {"human", "assistant"} <= keys:
-            return "anthropic_chat"
         if "chosen" in keys and "rejected" in keys and ("prompt" in keys or "input" in keys or "question" in keys):
             return "preference_pair"
-        if {"prompt", "completion"} <= keys or {"input", "output"} <= keys or {"instruction", "response"} <= keys:
+        if {"prompt", "completion"} <= keys or {"input", "output"} <= keys or {"instruction", "response"} <= keys or {"question", "answer"} <= keys:
             return "prompt_completion"
         if "text" in keys and "label" in keys:
             return "classification"

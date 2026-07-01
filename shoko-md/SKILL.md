@@ -35,7 +35,7 @@ Detected formats:
 
 - OpenAI chat JSONL with `messages` arrays and `system`, `user`, `assistant`, or `tool` roles.
 - Anthropic-style chat with alternate role names or `human` and `assistant` fields.
-- Prompt-completion pairs such as `prompt` plus `completion`, `input` plus `output`, or `instruction` plus `response`.
+- Prompt-completion pairs such as `prompt` plus `completion`, `input` plus `output`, `instruction` plus `response`, or `question` plus `answer`.
 - Preference pairs such as `prompt`, `chosen`, `rejected`.
 - Classification rows such as `text`, `label`.
 - Raw text, one document per line.
@@ -44,8 +44,8 @@ Read `references/formats.md` when input format is unclear.
 
 ## Workflow decision tree
 
-1. If multiple files are passed, or a single file contains a `split` field, run `scripts/split_leakage.py` first. Leakage between train and test is usually the highest-impact bug.
-2. Run `scripts/detect_format.py` on each file. If any file is mixed-format, treat it as CRITICAL and stop format-specific checks for that file.
+1. Run `scripts/detect_format.py` on each file. If any file is mixed-format, treat it as CRITICAL and stop format-specific checks for that file.
+2. If multiple files were passed, or a single file contains a `split` field, run `scripts/split_leakage.py` next. Leakage between train and test is usually the highest-impact bug.
 3. Run universal checks: schema, encoding, exact duplicates, near duplicates, length stats, empty/trivial content, and PII scan.
 4. Run only the relevant format-specific checks:
    - Chat: `scripts/chat_format_check.py`
@@ -63,7 +63,7 @@ Use the one-command runner unless the user asks for a custom sequence:
 python scripts/run_all.py /path/to/dataset-or-directory --output-dir qc-results --sample-size 5
 ```
 
-The runner writes per-check JSON, stderr logs, `manual_review_samples.json`, and `report.md`.
+The runner writes per-check JSON, stderr logs, `manual_review_samples.json`, `effective_config.json`, `run_all_summary.json`, and `report.md`. Pass `--skip-near` to skip the near-duplicate pass on large datasets.
 
 For declared classification labels or custom thresholds:
 
@@ -71,7 +71,7 @@ For declared classification labels or custom thresholds:
 python scripts/run_all.py data/ --config .shoko.config.json --output-dir qc-results
 ```
 
-Config files use `.shoko.config.json` (auto-discovered from the current directory or `~/.shoko.config.json`, or passed explicitly via `--config`).
+Config files use `.shoko.config.json` — `~/.shoko.config.json` and the current directory's `.shoko.config.json` are auto-discovered and merged over the defaults (local overrides global), or pass a JSON/YAML file explicitly via `--config`.
 
 Example:
 
